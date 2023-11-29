@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ahlul_quran_app/common/contants.dart';
+import 'package:flutter_ahlul_quran_app/database/sqlite.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PremiumPage extends StatefulWidget {
   const PremiumPage({super.key});
@@ -11,9 +13,26 @@ class PremiumPage extends StatefulWidget {
 }
 
 class _PremiumPageState extends State<PremiumPage> {
+  final db = DatabaseHelper();
   String selectedPackage = '';
   String price = '';
   DateTime expired = DateTime.now().add(Duration(days: 30));
+
+  late SharedPreferences _logindata;
+  late int usrId;
+
+  @override
+  void initState() {
+    super.initState();
+    initial();
+  }
+
+  void initial() async {
+    _logindata = await SharedPreferences.getInstance();
+    setState(() {
+      usrId = _logindata.getInt('userId')!;
+    });
+  }
 
   List<String> moneyRate = ['IDR', 'USD', 'WON'];
   String selectedMoneyRate = 'IDR';
@@ -475,7 +494,21 @@ class _PremiumPageState extends State<PremiumPage> {
                   width: 100,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).pop();
+                      db.insertPayment(
+                          usrId,
+                          DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                          selectedPackage,
+                          price,
+                          DateFormat('yyyy-MM-dd').format(expired));
+
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Payment success!'),
+                          duration: Duration(seconds: 2),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       elevation: 0,
