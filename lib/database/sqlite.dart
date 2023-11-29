@@ -3,7 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:flutter_ahlul_quran_app/data/models/users_model.dart';
 
 class DatabaseHelper {
-  final databaseName = "notes.db";
+  final databaseName = "notes2.db";
   String users =
       "create table users (usrId INTEGER PRIMARY KEY AUTOINCREMENT, fullname TEXT, usrName TEXT UNIQUE, usrPassword TEXT)";
 
@@ -15,6 +15,18 @@ class DatabaseHelper {
 
     return openDatabase(path, version: 1, onCreate: (db, version) async {
       await db.execute(users);
+
+      await db.execute('''
+      CREATE TABLE payment (
+        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        usrId INTEGER NOT NULL,
+        paymentDate TEXT,
+        expiredDate TEXT,
+        categoryPremium TEXT,
+        price TEXT,
+        FOREIGN KEY (usrId) REFERENCES users (usrId)
+      )
+    ''');
     });
   }
 
@@ -45,4 +57,27 @@ class DatabaseHelper {
     return db.insert('users', user.toMap());
   }
 
+  //Get current user
+  Future<List<Map<String, dynamic>>> getCurrentUser(String username) async {
+    Database db = await initDB();
+    return await db.query("users", where: 'usrName = ?', whereArgs: [username]);
+  }
+
+  Future<int> insertPayment(int usrId, String date, String category,
+      String price, String expired) async {
+    Database db = await initDB();
+    Map<String, dynamic> row = {
+      'usrId': usrId,
+      'paymentDate': date,
+      'expiredDate': expired,
+      'categoryPremium': category,
+      'price': price,
+    };
+    return await db.insert("payment", row);
+  }
+
+  Future<List<Map<String, dynamic>>> getListPayment(int userId) async {
+    Database db = await initDB();
+    return await db.query("payment", where: 'usrId = ?', whereArgs: [userId]);
+  }
 }

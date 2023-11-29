@@ -49,7 +49,9 @@ class _LoginPageState extends State<LoginPage> {
   final db = DatabaseHelper();
 
   login() async {
-    var hashedPassword = sha256.convert(utf8.encode(password.text)).toString(); //dekripsi ke plain text
+    var hashedPassword = sha256
+        .convert(utf8.encode(password.text))
+        .toString(); //dekripsi ke plain text
 
     print('Username: ${fullname.text}');
     print('Username: ${username.text}');
@@ -57,13 +59,16 @@ class _LoginPageState extends State<LoginPage> {
     print('Hashed Password: $hashedPassword');
 
     var response = await db.login(Users(
-      fullName: fullname.text,
+        fullName: fullname.text,
         usrName: username.text,
         usrPassword: hashedPassword));
 
+    // get user id
+    var userId = await db.getCurrentUser(username.text);
     if (response == true) {
       // Simpan status login ke SharedPreferences
       _logindata.setBool('login', false);
+      _logindata.setInt('userId', userId[0]['usrId']);
 
       // Alihkan ke halaman utama setelah login berhasil
       Navigator.pushReplacement(
@@ -93,15 +98,15 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
+        extendBodyBehindAppBar: true,
         resizeToAvoidBottomInset: false,
         backgroundColor: Colors.transparent,
         body: Container(
             decoration: const BoxDecoration(
-                image: DecorationImage(
-              image: AssetImage('assets/login_hero.png'),
-              fit: BoxFit.cover,
-            ),
+              image: DecorationImage(
+                image: AssetImage('assets/login_hero.png'),
+                fit: BoxFit.cover,
+              ),
             ),
             child: Form(
               key: formKey,
