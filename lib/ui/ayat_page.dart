@@ -4,7 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_ahlul_quran_app/bloc/ayat/ayat_bloc.dart';
 import 'package:flutter_ahlul_quran_app/data/models/surat_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../common/contants.dart';
+import '../data/models/surat_favorite_model.dart';
+import '../database/sqlite.dart';
 
 class AyatPage extends StatefulWidget {
   const AyatPage({
@@ -18,6 +21,24 @@ class AyatPage extends StatefulWidget {
 }
 
 class _AyatPageState extends State<AyatPage> {
+  final db = DatabaseHelper();
+  late SharedPreferences _logindata;
+  late int usrId;
+
+  @override
+  void initState() {
+    initial();
+    super.initState();
+  }
+
+  void initial() async {
+    _logindata = await SharedPreferences.getInstance();
+    setState(() {
+      usrId = _logindata.getInt('userId')!;
+    });
+    context.read<AyatBloc>().add(AyatGetEvent(noSurat: widget.surat.nomor));
+  }
+
   String _getSentenceCase(TempatTurun tempatTurun) {
     String tempatTurunString = tempatTurun.toString().split('.').last;
     tempatTurunString = tempatTurunString[0].toUpperCase() +
@@ -46,12 +67,21 @@ class _AyatPageState extends State<AyatPage> {
           IconButton(
             icon: Icon(Icons.bookmark_add_outlined),
             onPressed: () {
+              final nomorSurat = widget.surat.nomor.toString();
+              final namaSurat = widget.surat.namaLatin;
+              final jumlahAyat = widget.surat.jumlahAyat.toString();
+              db.insertFavorite(usrId, nomorSurat, namaSurat, jumlahAyat);
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Surat berhasil ditambahkan ke favorit'),
+                ),
+              );
             },
           ),
           IconButton(
-            icon: Icon(Icons.download),
-            onPressed: () {
-            },
+            icon: Icon(Icons.spatial_audio_off),
+            onPressed: () {},
           ),
         ],
       ),
@@ -176,126 +206,124 @@ class _AyatPageState extends State<AyatPage> {
                     (context, index) {
                       final ayat = state.detail.ayat![index];
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Column(
-                          children: [
-                            Container(
-                              padding:
-                              const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                              decoration: BoxDecoration(
-                                  color: AppColors.sage300,
-                                  borderRadius: BorderRadius.circular(100)),
-                              child: Row(
-                                children: [
-                                  Stack(
-                                    children: [
-                                      SvgPicture.asset(
-                                        'assets/svg/end_verse.svg',
-                                        color: AppColors.white,
-                                        width: 35,
-                                        height: 35,
-                                      ),
-                                      Positioned(
-                                        top: 2,
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                        child: Center(
-                                          child: Text(
-                                            "${ayat.nomor}",
-                                            style: GoogleFonts.poppins(
-                                              color: AppColors.white,
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Spacer(),
-                                  // IconButton(
-                                  //   onPressed: (){},
-                                  //   icon: const Icon(
-                                  //     Icons.play_arrow_outlined,
-                                  //     color: Colors.white,
-                                  //   ),
-                                  // ),
-                                  const SizedBox(
-                                    width: 10,
-                                  ),
-                                  IconButton(
-                                    onPressed: (){},
-                                    icon: const Icon(
-                                      Icons.volume_up_rounded,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 5,),
-                            Card(
-                                color: (ayat.nomor! % 2 == 1)
-                                    ? AppColors.sage
-                                    : AppColors.white,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(15),
-                                  ),
-                                ),
-                                child: Column(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 5),
+                                decoration: BoxDecoration(
+                                    color: AppColors.sage300,
+                                    borderRadius: BorderRadius.circular(100)),
+                                child: Row(
                                   children: [
-                                    ListTile(
-                                      title: Padding(
-                                        padding:
-                                        const EdgeInsets.only(top: 20, bottom: 10),
-                                        child: Text(
-                                          '${ayat.ar}',
-                                          textAlign: TextAlign.right,
-                                          style: GoogleFonts.amiri(
-                                            textStyle: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
+                                    Stack(
+                                      children: [
+                                        SvgPicture.asset(
+                                          'assets/svg/end_verse.svg',
+                                          color: AppColors.white,
+                                          width: 35,
+                                          height: 35,
+                                        ),
+                                        Positioned(
+                                          top: 2,
+                                          left: 0,
+                                          right: 0,
+                                          bottom: 0,
+                                          child: Center(
+                                            child: Text(
+                                              "${ayat.nomor}",
+                                              style: GoogleFonts.poppins(
+                                                color: AppColors.white,
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 12,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      subtitle: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.only(bottom: 10),
-                                            child: Text(
-                                              '${ayat.tr}',
-                                              style: GoogleFonts.poppins(
-                                                textStyle: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: AppColors.sage300),
-                                              ),
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.only(bottom: 10),
-                                            child: Text(
-                                              '\"${ayat.idn.toString()}\"',
-                                              style: GoogleFonts.poppins(
-                                                textStyle: TextStyle(
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                                      ],
+                                    ),
+                                    const Spacer(),
+                                    const SizedBox(
+                                      width: 10,
+                                    ),
+                                    IconButton(
+                                      onPressed: () {},
+                                      icon: const Icon(
+                                        Icons.bookmark_add_outlined,
+                                        color: Colors.white,
                                       ),
                                     ),
                                   ],
-                                )
-                            ),
-                            SizedBox(height: 5,)
-                          ],
-                        )
-                      );
+                                ),
+                              ),
+                              SizedBox(
+                                height: 5,
+                              ),
+                              Card(
+                                  color: (ayat.nomor! % 2 == 1)
+                                      ? AppColors.sage
+                                      : AppColors.white,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(15),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      ListTile(
+                                        title: Padding(
+                                          padding: const EdgeInsets.only(
+                                              top: 20, bottom: 10),
+                                          child: Text(
+                                            '${ayat.ar}',
+                                            textAlign: TextAlign.right,
+                                            style: GoogleFonts.amiri(
+                                              textStyle: const TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 10),
+                                              child: Text(
+                                                '${ayat.tr}',
+                                                style: GoogleFonts.poppins(
+                                                  textStyle: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: AppColors.sage300),
+                                                ),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 10),
+                                              child: Text(
+                                                '\"${ayat.idn.toString()}\"',
+                                                style: GoogleFonts.poppins(
+                                                  textStyle: TextStyle(
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  )),
+                              SizedBox(
+                                height: 5,
+                              )
+                            ],
+                          ));
                     },
                     childCount: state.detail.ayat!.length,
                   ),
@@ -316,5 +344,4 @@ class _AyatPageState extends State<AyatPage> {
       ),
     );
   }
-
 }

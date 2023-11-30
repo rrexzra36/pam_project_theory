@@ -3,7 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:flutter_ahlul_quran_app/data/models/users_model.dart';
 
 class DatabaseHelper {
-  final databaseName = "notes2.db";
+  final databaseName = "notes3.db";
   String users =
       "create table users (usrId INTEGER PRIMARY KEY AUTOINCREMENT, fullname TEXT, usrName TEXT UNIQUE, usrPassword TEXT)";
 
@@ -24,6 +24,17 @@ class DatabaseHelper {
         expiredDate TEXT,
         categoryPremium TEXT,
         price TEXT,
+        FOREIGN KEY (usrId) REFERENCES users (usrId)
+      )
+    ''');
+
+      await db.execute('''
+      CREATE TABLE favorite (
+        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        usrId INTEGER NOT NULL,
+        nomorSurat TEXT,
+        namaSuratLatin TEXT,
+        jumlahAyatSurat TEXT,
         FOREIGN KEY (usrId) REFERENCES users (usrId)
       )
     ''');
@@ -79,5 +90,27 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getListPayment(int userId) async {
     Database db = await initDB();
     return await db.query("payment", where: 'usrId = ?', whereArgs: [userId]);
+  }
+
+  Future<int> insertFavorite(
+      int usrId, String nomorSurat, String namaSurat, String jumlahAyat) async {
+    Database db = await initDB();
+    Map<String, dynamic> row = {
+      'usrId': usrId,
+      'nomorSurat': nomorSurat,
+      'namaSuratLatin': namaSurat,
+      'jumlahAyatSurat': jumlahAyat,
+    };
+    return await db.insert("favorite", row);
+  }
+
+  Future<List<Map<String, dynamic>>> getListFavorite(int userId) async {
+    Database db = await initDB();
+    return await db.query("favorite", where: 'usrId = ?', whereArgs: [userId]);
+  }
+
+  Future<int> deleteFavorite(int id) async {
+    Database db = await initDB();
+    return await db.delete("favorite", where: 'id = ?', whereArgs: [id]);
   }
 }
